@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile.prod
+    environment:
+      - ENVIRONMENT=production
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_URL=${REDIS_URL}
+      - CELERY_BROKER_URL=${REDIS_URL}
+      - CELERY_RESULT_BACKEND=${REDIS_URL}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+      - PUBLIC_KEY=${PUBLIC_KEY}
+    volumes:
+      - climate_data:/app/data
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+      restart_policy:
+        condition: on-failure
+
+  celery_worker:
+    build: 
+      context: .
+      dockerfile: Dockerfile.prod
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - ENVIRONMENT=production
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_URL=${REDIS_URL}
+      - CELERY_BROKER_URL=${REDIS_URL}
+      - CELERY_RESULT_BACKEND=${REDIS_URL}
+    volumes:
+      - climate_data:/app/data
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+      restart_policy:
+        condition: on-failure
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      
+volumes:
+  climate_data:

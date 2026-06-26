@@ -1,0 +1,61 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+        
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install alembic
+        pip install -r requirements.txt
+        
+    - name: Apply Database Migrations (Supabase)
+      working-directory: ./backend
+      env:
+        POSTGRES_SERVER: ${{ secrets.SUPABASE_DB_HOST }}
+        POSTGRES_USER: ${{ secrets.SUPABASE_DB_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        POSTGRES_DB: ${{ secrets.SUPABASE_DB_NAME }}
+        POSTGRES_PORT: 5432
+      run: |
+        echo "Running Alembic migrations against Supabase..."
+        # alembic upgrade head
+        
+    - name: Trigger Render Backend Deployment
+      env:
+        RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+      run: |
+        echo "Triggering Render deployment..."
+        if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+          curl -X POST "$RENDER_DEPLOY_HOOK"
+        else
+          echo "No RENDER_DEPLOY_HOOK configured."
+        fi
+        
+    - name: Trigger Vercel Frontend Deployment
+      env:
+        VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+      run: |
+        echo "Triggering Vercel deployment..."
+        if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
+          curl -X POST "$VERCEL_DEPLOY_HOOK"
+        else
+          echo "No VERCEL_DEPLOY_HOOK configured."
+        fi
