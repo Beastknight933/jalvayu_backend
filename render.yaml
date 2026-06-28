@@ -1,0 +1,71 @@
+services:
+  # Web API Service
+  - type: web
+    name: jalvayu-api
+    env: docker
+    region: ohio
+    plan: starter
+    healthCheckPath: /
+    preDeployCommand: alembic upgrade head
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SQLALCHEMY_DATABASE_URI
+        sync: false # Set this securely in the Render Dashboard
+      - key: POSTGRES_SERVER
+        value: db.lneujznykpjufthoetkh.supabase.co
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: POSTGRES_DB
+        value: postgres
+      - key: POSTGRES_PORT
+        value: "6543"
+      - key: REDIS_URL
+        value: rediss://default:gQAAAAAAAhlDAAIgcDEyYzA5NTQ0ZmM3ZWU0MTU5OTRkZWZjYzE1ZGE2MGE5OA@free-kite-137539.upstash.io:6379
+      - key: CELERY_BROKER_URL
+        value: rediss://default:gQAAAAAAAhlDAAIgcDEyYzA5NTQ0ZmM3ZWU0MTU5OTRkZWZjYzE1ZGE2MGE5OA@free-kite-137539.upstash.io:6379
+      - key: CELERY_RESULT_BACKEND
+        value: rediss://default:gQAAAAAAAhlDAAIgcDEyYzA5NTQ0ZmM3ZWU0MTU5OTRkZWZjYzE1ZGE2MGE5OA@free-kite-137539.upstash.io:6379
+      - key: PRIVATE_KEY
+        sync: false
+      - key: PUBLIC_KEY
+        sync: false
+    disk:
+      name: jalvayu-data
+      mountPath: /app/data
+      sizeGB: 10
+
+  # Celery Background Worker
+  - type: worker
+    name: jalvayu-worker
+    env: docker
+    region: ohio
+    plan: starter
+    dockerCommand: celery -A app.workers.celery_app worker --loglevel=info
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SQLALCHEMY_DATABASE_URI
+        sync: false # Set this securely in the Render Dashboard
+      - key: POSTGRES_SERVER
+        value: db.lneujznykpjufthoetkh.supabase.co
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: POSTGRES_DB
+        value: postgres
+      - key: POSTGRES_PORT
+        value: "6543"
+      - key: REDIS_URL
+        value: rediss://default:gQAAAAAAAhlDAAIgcDEyYzA5NTQ0ZmM3ZWU0MTU5OTRkZWZjYzE1ZGE2MGE5OA@free-kite-137539.upstash.io:6379
+      - key: CELERY_BROKER_URL
+        value: rediss://default:gQAAAAAAAhlDAAIgcDEyYzA5NTQ0ZmM3ZWU0MTU5OTRkZWZjYzE1ZGE2MGE5OA@free-kite-137539.upstash.io:6379
+      - key: CELERY_RESULT_BACKEND
+        value: rediss://default:gQAAAAAAAhlDAAIgcDEyYzA5NTQ0ZmM3ZWU0MTU5OTRkZWZjYzE1ZGE2MGE5OA@free-kite-137539.upstash.io:6379
+    disk:
+      name: jalvayu-data
+      mountPath: /app/data
+      sizeGB: 10

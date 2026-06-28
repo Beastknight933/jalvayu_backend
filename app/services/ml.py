@@ -17,9 +17,10 @@ class MLService:
         model = await registry_repo.create(db, obj_in=obj_in)
         return ModelRegistryResponse.model_validate(model)
 
-    async def list_models(self, db: AsyncSession, skip: int = 0, limit: int = 100) -> list[ModelRegistryResponse]:
+    async def list_models(self, db: AsyncSession, skip: int = 0, limit: int = 100) -> tuple[list[ModelRegistryResponse], int]:
         models = await registry_repo.get_multi(db, skip=skip, limit=limit)
-        return [ModelRegistryResponse.model_validate(m) for m in models]
+        total = await registry_repo.count(db)
+        return [ModelRegistryResponse.model_validate(m) for m in models], total
 
     async def trigger_training(self, db: AsyncSession, model_id: UUID) -> TrainingRunResponse:
         """

@@ -8,8 +8,8 @@ engine: AsyncEngine = create_async_engine(
     echo=settings.ENVIRONMENT == "development",
     future=True,
     pool_pre_ping=True, # Proactively check if connection is alive
-    pool_size=10,
-    max_overflow=20
+    pool_size=20,
+    max_overflow=10
 )
 
 # AsyncSession factory

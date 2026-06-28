@@ -15,9 +15,11 @@ def add_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(BaseAppException)
     async def app_exception_handler(request: Request, exc: BaseAppException) -> JSONResponse:
         logger.warning(f"Application exception: {exc.message} on path {request.url.path}")
+        from app.api.core.responses import APIErrorResponse
+        response = APIErrorResponse(message=exc.message, errors=exc.payload if isinstance(exc.payload, list) else [exc.payload] if exc.payload else None)
         return JSONResponse(
             status_code=exc.status_code,
-            content={"message": exc.message, "details": exc.payload},
+            content=response.model_dump(),
         )
 
     @app.exception_handler(RequestValidationError)

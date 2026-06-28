@@ -38,8 +38,8 @@ async def list_datasets(
     """
     List all available Climate Datasets.
     """
-    data = await climate_service.get_datasets(db, skip=skip, limit=limit)
-    paginated = PaginatedData(items=data, total=len(data), skip=skip, limit=limit)
+    data, total = await climate_service.get_datasets(db, skip=skip, limit=limit)
+    paginated = PaginatedData(items=data, total=total, skip=skip, limit=limit)
     return APIPaginatedResponse(success=True, data=paginated)
 
 @router.get("/{dataset_id}", response_model=APIResponse[ClimateDatasetResponse])

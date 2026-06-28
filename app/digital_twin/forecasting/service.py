@@ -1,6 +1,6 @@
 import datetime
 from uuid import UUID
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,12 +14,13 @@ class ForecastingService:
     (1-day, 3-day, 7-day, 15-day, 30-day).
     """
 
-    async def generate_forecast(self, db: AsyncSession, target_variable: str, horizon_days: int) -> str:
+    async def generate_forecast(self, db: AsyncSession, target_variable: str, horizon_days: int, scenario_id: Optional[UUID] = None) -> str:
         """
         Generates a forecast grid and saves it to disk.
         Returns the path to the forecast file.
         """
-        logger.info(f"Generating {horizon_days}-day forecast for {target_variable}")
+        scenario_str = f" for scenario {scenario_id}" if scenario_id else ""
+        logger.info(f"Generating {horizon_days}-day forecast for {target_variable}{scenario_str}")
         
         # 1. Load active model
         model = await registry_manager.get_active_model(db, target_variable)
@@ -33,7 +34,8 @@ class ForecastingService:
         forecast_array = model.predict(latest_state)
         
         # 4. Save to disk as NetCDF (Mocked)
-        forecast_path = f"/app/data/models/forecasts/{target_variable}_{horizon_days}d_{datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')}.nc"
+        prefix = f"{scenario_id}_" if scenario_id else ""
+        forecast_path = f"/app/data/models/forecasts/{prefix}{target_variable}_{horizon_days}d_{datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')}.nc"
         
         # 5. Log in DB (would be done by orchestrator)
         return forecast_path

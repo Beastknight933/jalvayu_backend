@@ -1,7 +1,7 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
@@ -31,6 +31,11 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         query = select(self.model).offset(skip).limit(limit)
         result = await db.execute(query)
         return list(result.scalars().all())
+        
+    async def count(self, db: AsyncSession) -> int:
+        query = select(func.count()).select_from(self.model)
+        result = await db.execute(query)
+        return result.scalar_one()
 
     async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = obj_in.model_dump(exclude_unset=True)

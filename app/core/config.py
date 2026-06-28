@@ -37,11 +37,14 @@ class Settings(BaseSettings):
         )
 
     # Redis Settings
-    REDIS_HOST: str
-    REDIS_PORT: str
+    REDIS_URL: Optional[str] = None
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: str = "6379"
 
     @property
     def redis_url(self) -> str:
+        if self.REDIS_URL:
+            return self.REDIS_URL
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
     # JWT Authentication Settings

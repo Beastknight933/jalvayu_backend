@@ -1,7 +1,7 @@
 import asyncio
 from uuid import UUID
 from loguru import logger
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.workers.celery_app import celery_app
 from app.db.session import AsyncSessionLocal
@@ -43,7 +43,7 @@ async def async_train_model(run_id: UUID, model_id: UUID):
             await training_repo.update(
                 db, 
                 db_obj=run, 
-                obj_in=TrainingRunUpdate(completed_at=datetime.utcnow(), training_metrics=metrics)
+                obj_in=TrainingRunUpdate(completed_at=datetime.now(timezone.utc), training_metrics=metrics)
             )
             
             logger.info(f"Training completed successfully for model {model_id}")
@@ -53,16 +53,20 @@ async def async_train_model(run_id: UUID, model_id: UUID):
             await training_repo.update(
                 db, 
                 db_obj=run, 
-                obj_in=TrainingRunUpdate(completed_at=datetime.utcnow(), error_message=str(e))
+                obj_in=TrainingRunUpdate(completed_at=datetime.now(timezone.utc), error_message=str(e))
             )
             await registry_repo.update(db, db_obj=model_record, obj_in=ModelRegistryUpdate(status=ModelStatus.FAILED))
 
 
-@celery_app.task(name="train_model_task")
-def train_model_task(run_id_str: str, model_id_str: str):
+@celery_app.task(name="train_model_task", bind=True, max_retries=3)
+def train_model_task(self, run_id_str: str, model_id_str: str):
     """
     Celery task wrapper for model training.
     """
     logger.info(f"Starting Celery task: train_model_task for model {model_id_str}")
-    asyncio.run(async_train_model(UUID(run_id_str), UUID(model_id_str)))
-    return "Training task triggered"
+    try:
+        asyncio.run(async_train_model(UUID(run_id_str), UUID(model_id_str)))
+        return "Training task completed"
+    except Exception as exc:
+        logger.error(f"Training task failed for model {model_id_str}: {exc}")
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries)

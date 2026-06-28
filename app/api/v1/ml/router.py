@@ -34,8 +34,8 @@ async def list_models(
     """
     List registered ML models.
     """
-    data = await ml_service.list_models(db, skip=skip, limit=limit)
-    paginated = PaginatedData(items=data, total=len(data), skip=skip, limit=limit)
+    data, total = await ml_service.list_models(db, skip=skip, limit=limit)
+    paginated = PaginatedData(items=data, total=total, skip=skip, limit=limit)
     return APIPaginatedResponse(success=True, data=paginated)
 
 @router.post("/models/{model_id}/train", response_model=APIResponse[TrainingRunResponse], status_code=202)

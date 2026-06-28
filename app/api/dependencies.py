@@ -57,3 +57,14 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
     if not current_user.is_superuser and current_user.role != UserRole.ADMIN:
         raise UnauthorizedException("The user doesn't have enough privileges")
     return current_user
+
+class RequireRole:
+    def __init__(self, allowed_roles: list[UserRole]):
+        self.allowed_roles = allowed_roles
+        
+    def __call__(self, current_user: CurrentUser) -> User:
+        if current_user.is_superuser:
+            return current_user
+        if current_user.role not in self.allowed_roles:
+            raise UnauthorizedException("The user doesn't have enough privileges")
+        return current_user

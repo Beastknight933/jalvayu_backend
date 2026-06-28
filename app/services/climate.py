@@ -6,6 +6,7 @@ from app.core.exceptions import ConflictException, NotFoundException
 from app.models.climate import DatasetSource
 from app.repositories.climate import climate_repo, version_repo
 from app.schemas.climate import ClimateDatasetCreate, ClimateDatasetResponse, DatasetVersionCreate, DatasetVersionResponse
+from app.core.redis import redis_client
 
 
 class ClimateService:
@@ -21,15 +22,25 @@ class ClimateService:
         dataset = await climate_repo.create(db, obj_in=obj_in)
         return ClimateDatasetResponse.model_validate(dataset)
 
-    async def get_datasets(self, db: AsyncSession, *, skip: int = 0, limit: int = 100) -> list[ClimateDatasetResponse]:
+    async def get_datasets(self, db: AsyncSession, *, skip: int = 0, limit: int = 100) -> tuple[list[ClimateDatasetResponse], int]:
         datasets = await climate_repo.get_multi(db, skip=skip, limit=limit)
-        return [ClimateDatasetResponse.model_validate(d) for d in datasets]
+        total = await climate_repo.count(db)
+        return [ClimateDatasetResponse.model_validate(d) for d in datasets], total
         
     async def get_dataset(self, db: AsyncSession, *, id: UUID) -> ClimateDatasetResponse:
+        cache_key = f"climate_dataset:{id}"
+        cached_data = await redis_client.get(cache_key)
+        
+        if cached_data:
+            return ClimateDatasetResponse.model_validate_json(cached_data)
+            
         dataset = await climate_repo.get(db, id=id)
         if not dataset:
             raise NotFoundException("Dataset not found")
-        return ClimateDatasetResponse.model_validate(dataset)
+            
+        response = ClimateDatasetResponse.model_validate(dataset)
+        await redis_client.setex(cache_key, 3600, response.model_dump_json())
+        return response
 
     async def add_version(self, db: AsyncSession, *, obj_in: DatasetVersionCreate) -> DatasetVersionResponse:
         dataset = await climate_repo.get(db, id=obj_in.dataset_id)

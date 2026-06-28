@@ -4,9 +4,9 @@ from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from app.db.base_class import Base
+from app.db.base import Base
 from app.main import app
-from app.api.dependencies import get_db
+from app.api.dependencies import get_db_session
 
 # Use a separate test database or sqlite memory for testing
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -41,7 +41,7 @@ async def db() -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 async def async_client(db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Provide an async HTTP client for API testing."""
-    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_db_session] = lambda: db
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
     app.dependency_overrides.clear()

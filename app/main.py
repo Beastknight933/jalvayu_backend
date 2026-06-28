@@ -38,12 +38,25 @@ def create_app() -> FastAPI:
     """
     app = FastAPI(
         title=settings.PROJECT_NAME,
+        description="Enterprise-grade Climate Digital Twin backend platform.",
+        version="1.0.0",
         openapi_url=f"{settings.API_V1_STR}/openapi.json",
         lifespan=lifespan,
     )
 
     # Add standard middlewares (Order matters!)
     from starlette.middleware.gzip import GZipMiddleware
+    from starlette.middleware.trustedhost import TrustedHostMiddleware
+    import secure
+    from fastapi.middleware.base import BaseHTTPMiddleware
+    
+    secure_headers = secure.Secure()
+    class SecureHeadersMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            response = await call_next(request)
+            secure_headers.framework.fastapi(response)
+            return response
+
     from app.api.middlewares.request_id import RequestIDMiddleware
     from app.api.middlewares.logging import APILoggingMiddleware
     from app.api.middlewares.rate_limit import limiter
@@ -51,13 +64,22 @@ def create_app() -> FastAPI:
     from slowapi import _rate_limit_exceeded_handler
 
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+    app.add_middleware(SecureHeadersMiddleware)
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"] if settings.ENVIRONMENT == "development" else ["yourdomain.com", "*.yourdomain.com"])
     app.add_middleware(APILoggingMiddleware)
     app.add_middleware(RequestIDMiddleware)
 
     # Set all CORS enabled origins
+    origins = [
+        "http://localhost:3000",
+        "http://localhost:8080",
+    ] if settings.ENVIRONMENT == "development" else [
+        "https://yourfrontend.com",
+    ]
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Restrict in production
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

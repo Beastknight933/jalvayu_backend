@@ -1,7 +1,7 @@
 import enum
 from typing import Optional
 
-from sqlalchemy import String, Enum, ForeignKey, Text
+from sqlalchemy import String, Enum, ForeignKey, Text, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from geoalchemy2 import Geometry
 
@@ -44,6 +44,9 @@ class DatasetVersion(Base):
     dataset: Mapped["ClimateDataset"] = relationship(back_populates="versions")
     metadata_records: Mapped[list["ClimateMetadata"]] = relationship(back_populates="version", cascade="all, delete-orphan")
 
+    __table_args__ = (
+        UniqueConstraint("dataset_id", "version_tag", name="uq_dataset_version"),
+    )
 
 class ClimateMetadata(Base):
     """
@@ -58,6 +61,10 @@ class ClimateMetadata(Base):
     
     temporal_coverage_start = mapped_column(String(50), nullable=True) # e.g., "1901-01-01"
     temporal_coverage_end = mapped_column(String(50), nullable=True)
+    
+    __table_args__ = (
+        Index("ix_climate_metadata_version_temporal", "version_id", "temporal_coverage_start"),
+    )
     
     variables: Mapped[Optional[str]] = mapped_column(String(500)) # Comma separated, e.g., "rainfall,tmax,tmin"
     

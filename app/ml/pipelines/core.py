@@ -60,7 +60,18 @@ class MLPipeline:
         y_train, y_val = y[:split_idx], y[split_idx:]
         
         # 4. Train
-        metrics = self.model.train(X_train, y_train, X_val, y_val)
+        raw_metrics = self.model.train(X_train, y_train, X_val, y_val)
+        
+        # 5. Evaluate standard metrics
+        y_pred = self.model.predict(X_val)
+        from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+        
+        metrics = {
+            "rmse": float(mean_squared_error(y_val, y_pred, squared=False)),
+            "mae": float(mean_absolute_error(y_val, y_pred)),
+            "r2": float(r2_score(y_val, y_pred)),
+            **raw_metrics
+        }
         
         return metrics
 
