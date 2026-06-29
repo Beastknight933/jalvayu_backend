@@ -35,9 +35,9 @@ RUN useradd -m -s /bin/bash appuser
 # Copy application code
 COPY . /app
 
-# Ensure data directories exist and are writable
-RUN mkdir -p /app/data/raw /app/data/processed /app/data/models /app/data/forecasts \
-    && chown -R appuser:appuser /app/data
+# Ensure data and log directories exist and are writable
+RUN mkdir -p /app/data/raw /app/data/processed /app/data/models /app/data/forecasts /app/logs \
+    && chown -R appuser:appuser /app/data /app/logs
 
 USER appuser
 
