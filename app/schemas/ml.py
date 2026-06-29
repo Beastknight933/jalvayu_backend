@@ -26,6 +26,7 @@ class ModelRegistryUpdate(BaseModel):
     status: Optional[ModelStatus] = None
     is_active_deployment: Optional[bool] = None
     model_path: Optional[str] = None
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class ModelRegistryResponse(ModelRegistryBase):
@@ -36,13 +37,14 @@ class ModelRegistryResponse(ModelRegistryBase):
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 # --- TrainingRun Schemas ---
 class TrainingRunBase(BaseModel):
     model_id: UUID
     hyperparameters: Optional[Dict[str, Any]] = None
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class TrainingRunCreate(TrainingRunBase):
@@ -64,4 +66,4 @@ class TrainingRunResponse(TrainingRunBase):
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())

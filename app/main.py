@@ -48,7 +48,7 @@ def create_app() -> FastAPI:
     from starlette.middleware.gzip import GZipMiddleware
     from starlette.middleware.trustedhost import TrustedHostMiddleware
     import secure
-    from fastapi.middleware.base import BaseHTTPMiddleware
+    from starlette.middleware.base import BaseHTTPMiddleware
     
     secure_headers = secure.Secure()
     class SecureHeadersMiddleware(BaseHTTPMiddleware):
