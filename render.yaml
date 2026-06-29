@@ -3,6 +3,7 @@ services:
   - type: web
     name: jalvayu-api
     env: docker
+    dockerfilePath: Dockerfile.prod
     region: ohio
     plan: starter
     healthCheckPath: /
@@ -41,6 +42,7 @@ services:
   - type: worker
     name: jalvayu-worker
     env: docker
+    dockerfilePath: Dockerfile.prod
     region: ohio
     plan: starter
     dockerCommand: celery -A app.workers.celery_app worker --loglevel=info
