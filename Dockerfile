@@ -25,6 +25,9 @@ RUN addgroup --system app && adduser --system --group app
 # Copy the rest of the application with appropriate permissions
 COPY --chown=app:app . .
 
+# Explicitly create directories the app needs to write to and ensure permissions
+RUN mkdir -p /app/data /app/logs && chown -R app:app /app/data /app/logs /app
+
 USER app
 
 EXPOSE 8000
