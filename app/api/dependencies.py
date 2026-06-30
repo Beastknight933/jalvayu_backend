@@ -12,6 +12,24 @@ from app.db.session import get_db_session
 from app.models.user import User, UserRole
 from app.repositories.user import user_repo
 
+# Weather Services Injection
+from app.services.weather_base import WeatherServiceInterface
+from app.services.weather_ai import AIWeatherPredictionService
+from app.services.weather_live import LiveWeatherService
+import os
+
+def get_weather_service() -> WeatherServiceInterface:
+    """
+    Returns the appropriate weather service based on configuration.
+    Defaults to AIWeatherPredictionService (Zero-cost local execution).
+    """
+    use_live_api = os.getenv("USE_LIVE_WEATHER_API", "false").lower() == "true"
+    if use_live_api:
+        return LiveWeatherService()
+    return AIWeatherPredictionService()
+
+WeatherServiceDep = Annotated[WeatherServiceInterface, Depends(get_weather_service)]
+
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"api/v1/auth/login"
 )
