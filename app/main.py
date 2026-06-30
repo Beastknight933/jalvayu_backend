@@ -65,7 +65,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     app.add_middleware(SecureHeadersMiddleware)
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"] if settings.ENVIRONMENT == "development" else ["yourdomain.com", "*.yourdomain.com"])
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
     app.add_middleware(APILoggingMiddleware)
     app.add_middleware(RequestIDMiddleware)
 
@@ -75,6 +75,8 @@ def create_app() -> FastAPI:
         "http://localhost:8080",
     ] if settings.ENVIRONMENT == "development" else [
         "https://yourfrontend.com",
+        "https://jalvayu-frontend.vercel.app",
+        "https://jalvayu-backend.onrender.com",
     ]
 
     app.add_middleware(
