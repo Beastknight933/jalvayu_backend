@@ -8,7 +8,7 @@ from app.api.v1.twin.router import router as twin_router
 from app.api.v1.health.router import router as health_router
 from app.api.v1.metrics.router import router as metrics_router
 from app.api.websockets.router import router as ws_router
-from app.api.v1.weather_prediction import router as weather_router
+from app.api.v1.endpoints.weather import router as weather_router
 
 api_router = APIRouter()
 
