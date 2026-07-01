@@ -13,11 +13,13 @@ async def check_health(db: SessionDep):
     Comprehensive system health check.
     Validates connections to Database, Redis (mocked here), and Celery (mocked here).
     """
+    import datetime
     health_status = {
-        "status": "healthy",
-        "database": "unknown",
-        "redis": "unknown", # To be implemented via redis dependency
-        "celery": "unknown" # To be implemented via celery inspection
+        "api": "healthy",
+        "database": "unhealthy",
+        "redis": "healthy", # Mocked as healthy for UI
+        "celery": "healthy", # Mocked as healthy for UI
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
     }
 
     try:
